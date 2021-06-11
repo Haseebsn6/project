@@ -1,0 +1,59 @@
+#include "DHT.h"
+//
+#define DHTPIN 4
+#define DHTTYPE DHT22
+//
+DHT dht(DHTPIN, DHTTYPE);
+
+// Include the Wire library for I2C
+ 
+// Wire Slave Receiver
+// Demonstrates use of the Wire library
+// Receives data as an I2C/TWI slave device
+#include <Wire.h>
+int sensor = 2;              // the pin that the motionsensor is atteched to
+int state = LOW;             // by default, no motion detected
+int val = 0;    
+const int ledPin = 13; // onboard LED
+static_assert(LOW == 0, "Expecting LOW to be 0");
+
+void setup() {
+  
+  Wire.begin(0x8);                // join i2c bus with address #8
+  Wire.onReceive(receiveEvent); // register event
+  pinMode(ledPin, OUTPUT);
+  //pinMode(led, OUTPUT);      // initalize LED as an output
+  pinMode(sensor, INPUT); 
+  digitalWrite(ledPin, LOW); // turn it off
+  Serial.begin(9600);   
+  dht.begin();
+}
+
+void loop() {
+  delay(100);
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  Serial.print(" Humidity: ");
+  Serial.print(h);
+  Serial.print(", Temperature: ");
+  Serial.println(t);
+  val = digitalRead(sensor);   // read sensor value
+    if (state == LOW) {
+      Serial.println("Motion detected!"); 
+      state = HIGH;       // update variable state to HIGH
+    }
+    else{
+        Serial.println("Motion stopped!");
+        state = LOW;       // update variable state to LOW
+    } 
+  delay(2000);
+}
+
+// function that executes whenever data is received from master
+// this function is registered as an event, see setup()
+void receiveEvent(int howMany) {
+  while (Wire.available()) { // loop through all but the last
+    char c = Wire.read(); // receive byte as a character
+    digitalWrite(ledPin, c);
+  }
+}
